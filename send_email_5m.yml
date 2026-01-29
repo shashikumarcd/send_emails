@@ -1,29 +1,24 @@
-name: Send Email Every 5 Minutes
+  - name: Set up Python
+    uses: actions/setup-python@v4
+    with:
+      python-version: ${{ matrix.python-version }}
 
-on:
-  schedule:
-    - cron: "*/5 * * * *"   # Every 5 minutes
-  workflow_dispatch:        # Allows manual run
+  - name: Cache pip
+    uses: actions/cache@v4
+    with:
+      path: ~/.cache/pip
+      key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+      restore-keys: |
+        ${{ runner.os }}-pip-
 
-jobs:
-  send-email:
-    runs-on: ubuntu-latest
+  - name: Install dependencies
+    run: |
+      python -m pip install --upgrade pip
+      if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    steps:
-      - name: Send email
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ secrets.SMTP_PORT }}
-          username: ${{ secrets.SMTP_USERNAME }}
-          password: ${{ secrets.SMTP_PASSWORD }}
-
-          subject: "GitHub Actions Scheduled Email"
-          body: |
-            Hello 👋
-
-            This email was sent automatically by GitHub Actions.
-            Time: ${{ github.run_id }}
-
-          to: ${{ secrets.TO_EMAIL }}
-          from: GitHub Actions <${{ secrets.SMTP_USERNAME }}>
+  - name: Run script
+    env:
+      # Put sensitive values in repo Secrets (Settings -> Secrets -> Actions)
+      GMAIL_USER: ${{ secrets.GMAIL_USER }}
+      GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
+    run: python path/to/your_script.py
